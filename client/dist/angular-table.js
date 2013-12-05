@@ -123,6 +123,16 @@
               "</li>" +
             "</ul>" +
           "</div>",
+//        template: "" +
+//          "<pagination " +
+//            "total-items='totalItems' " +
+//            "page='currentPage' " +
+//            "max-size='maxSize' " +
+//            "class='pagination-small' " +
+//            "boundary-links='true' " +
+//            "rotate='false' " +
+//            "num-pages='numPages'>" +
+//          "</pagination>",
         scope: {
           itemsPerPage: "@",
           instance: "=",
@@ -132,6 +142,10 @@
           var normalizePage, update;
 
           $scope.instance = $scope;
+//          $scope.totalItems = $scope.list.length;
+//          $scope.maxSize = 5;
+//          $scope.numPages = $scope.numberOfPages;
+
           $scope.currentPage = 0;
           normalizePage = function (page) {
             page = Math.max(0, page);
@@ -139,21 +153,15 @@
             return page;
           };
           update = function (reset) {
-            var x;
-
             $scope.currentPage = 0;
             if ($scope.list) {
               if ($scope.list.length > 0) {
                 $scope.numberOfPages = Math.ceil($scope.list.length / $scope.itemsPerPage);
-                return $scope.pages = (function () {
-                  var _i, _ref, _results;
-
-                  _results = [];
-                  for (x = _i = 0, _ref = $scope.numberOfPages - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; x = 0 <= _ref ? ++_i : --_i) {
-                    _results.push(x);
-                  }
-                  return _results;
-                })();
+                $scope.pages = [];
+                for (var x = 0; x <= ($scope.numberOfPages - 1); x++) {
+                  $scope.pages.push(x);
+                }
+                return $scope.pages;
               } else {
                 $scope.numberOfPages = 1;
                 return $scope.pages = [0];
@@ -166,17 +174,16 @@
             }
           };
           $scope.getFillerArray = function () {
-            var fillerLength, itemCountOnLastPage, x, _i, _ref, _ref1, _results;
-
+            var fillerLength, itemCountOnLastPage, results;
             if ($scope.currentPage === $scope.numberOfPages - 1) {
               itemCountOnLastPage = $scope.list.length % $scope.itemsPerPage;
               if (itemCountOnLastPage !== 0 || $scope.list.length === 0) {
                 fillerLength = $scope.itemsPerPage - itemCountOnLastPage - 1;
-                _results = [];
-                for (x = _i = _ref = $scope.list.length, _ref1 = $scope.list.length + fillerLength; _ref <= _ref1 ? _i <= _ref1 : _i >= _ref1; x = _ref <= _ref1 ? ++_i : --_i) {
-                  _results.push(x);
+                results = [];
+                for (var x = $scope.list.length; x <= ($scope.list.length + fillerLength); x++) {
+                  results.push(x);
                 }
-                return _results;
+                return results;
               } else {
                 return [];
               }
