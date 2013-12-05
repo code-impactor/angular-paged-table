@@ -1,5 +1,5 @@
 (function () {
-  angular.module("angular-table", []);
+  angular.module("angular-table", ["ui.bootstrap", "ngSanitize"]);
 
   angular.module("angular-table").directive("atTable", [
     "metaCollector", "setupFactory", function (metaCollector, setupFactory) {
@@ -105,63 +105,98 @@
   ]);
 
   angular.module("angular-table").directive("atPagination", [
-    function () {
+    function ($parse) {
       return {
         replace: true,
         restrict: "E",
         template: "" +
           "<div class='pagination' style='margin: 0px;'>" +
             "<ul>" +
-              "<li ng-class='{disabled: currentPage <= 0}'>" +
-                "<a href='' ng-click='goToPage(currentPage - 1)'>&laquo;</a>" +
-              "</li>" +
-              "<li ng-class='{active: currentPage == page}' ng-repeat='page in pages'>" +
-                "<a href='' ng-click='goToPage(page)'>{{page + 1}}</a>" +
-              "</li>" +
-              "<li ng-class='{disabled: currentPage >= numberOfPages - 1}'>" +
-                "<a href='' ng-click='goToPage(currentPage + 1); normalize()'>&raquo;</a>" +
+              "<li ng-class='{active: page.active, disabled: page.disabled}' ng-repeat='page in pages'>" +
+                "<a href='' ng-click='goToPage(page.number)' ng-bind-html='page.text'></a>" +
               "</li>" +
             "</ul>" +
           "</div>",
-//        template: "" +
-//          "<pagination " +
-//            "total-items='totalItems' " +
-//            "page='currentPage' " +
-//            "max-size='maxSize' " +
-//            "class='pagination-small' " +
-//            "boundary-links='true' " +
-//            "rotate='false' " +
-//            "num-pages='numPages'>" +
-//          "</pagination>",
         scope: {
           itemsPerPage: "@",
           instance: "=",
           list: "="
         },
         link: function ($scope, $element, $attributes) {
-          var normalizePage, update;
+          var normalizePage, update, maxSize;
 
           $scope.instance = $scope;
-//          $scope.totalItems = $scope.list.length;
-//          $scope.maxSize = 5;
-//          $scope.numPages = $scope.numberOfPages;
-
           $scope.currentPage = 0;
           normalizePage = function (page) {
             page = Math.max(0, page);
             page = Math.min($scope.numberOfPages - 1, page);
             return page;
           };
+          // Create page object used in template
+          function makePage(number, text, isActive, isDisabled) {
+            return {
+              number: number,
+              text: text,
+              active: isActive,
+              disabled: isDisabled
+            };
+          }
+
+          var getPages = function (currentPage) {
+            var pages = [];
+            // Default page limits
+            $scope.numberOfPages = Math.ceil($scope.list.length / $scope.itemsPerPage);
+            var maxSize = parseInt($attributes.maxSize, 10) || 5;
+
+            // Default page limits
+            var startPage = 0,
+              endPage = $scope.numberOfPages - 1;
+            var isMaxSized = (angular.isDefined(maxSize) && maxSize < $scope.numberOfPages);
+
+
+            // recompute if maxSize
+            if (isMaxSized && maxSize > 0) {
+              startPage = ((Math.ceil(($scope.currentPage + 1) / maxSize) - 1) * maxSize);
+              endPage = Math.min(startPage + maxSize - 1, ($scope.numberOfPages - 1));
+            }
+            // Add page number links
+            for (var number = startPage; number <= endPage; number++) {
+              var page = makePage(number, '<i>' + (number + 1) + '</i>', (currentPage === number), false);
+              pages.push(page);
+            }
+
+            // Add previous & next links
+            var previousPage = makePage(currentPage - 1, '<i class="icon-backward"></i>', false, (currentPage === 0));
+            pages.unshift(previousPage);
+
+            var nextPage = makePage(currentPage + 1, '<i class="icon-forward"></i>', false, (currentPage === ($scope.numberOfPages - 1)));
+            pages.push(nextPage);
+
+            // Add links to move between page sets
+            if (isMaxSized && maxSize > 0) {
+              if (startPage > 0) {
+                var previousPageSet = makePage(startPage - 1, '<i class="icon-fast-backward">...</i>', false, false);
+                pages.unshift(previousPageSet);
+              }
+              if (endPage < ($scope.numberOfPages - 1)) {
+                var nextPageSet = makePage(endPage + 1, '<i class="icon-fast-forward">...</i>', false, false);
+                pages.push(nextPageSet);
+              }
+            }
+
+            // Add first & last links
+            var firstPage = makePage(0, '<i class="icon-step-backward"></i>', false, (currentPage === 0));
+            pages.unshift(firstPage);
+
+            var lastPage = makePage($scope.numberOfPages, '<i class="icon-step-forward"></i>', false, (currentPage === ($scope.numberOfPages - 1)));
+            pages.push(lastPage);
+
+            return pages;
+          }
           update = function (reset) {
-            $scope.currentPage = 0;
             if ($scope.list) {
               if ($scope.list.length > 0) {
-                $scope.numberOfPages = Math.ceil($scope.list.length / $scope.itemsPerPage);
-                $scope.pages = [];
-                for (var x = 0; x <= ($scope.numberOfPages - 1); x++) {
-                  $scope.pages.push(x);
-                }
-                return $scope.pages;
+                return $scope.pages = getPages($scope.currentPage);
               } else {
                 $scope.numberOfPages = 1;
                 return $scope.pages = [0];
@@ -190,9 +225,12 @@
             }
           };
           $scope.goToPage = function (page) {
-            return $scope.currentPage = normalizePage(page);
+            $scope.currentPage = normalizePage(page);
           };
           update();
+          $scope.$watch("currentPage", function () {
+            return update();
+          });
           $scope.$watch("itemsPerPage", function () {
             return update();
           });

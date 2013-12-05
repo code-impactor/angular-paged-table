@@ -10,7 +10,9 @@
 
     <script type="text/javascript" src="/static/jquery-1.10.2.min.js"></script>
     <script type="text/javascript" src="/static/angular.min.js"></script>
-    <script type="text/javascript" src="/static/angular-table.min.js"></script>
+    <script type="text/javascript" src="//code.angularjs.org/1.2.3/angular-sanitize.js"></script>
+    <script type="text/javascript" src="/static/ui-bootstrap-tpls-0.7.0.min.js"></script>
+    <script type="text/javascript" src="/static/angular-table.js"></script>
     <script type="text/javascript" src="/static/angular-tabs.min.js"></script>
 
     <link href="/static/css/bootstrap.min.css" rel="stylesheet">
@@ -90,7 +92,7 @@
 
                 $scope.shortLoremList = randomList(loremArray, 5);
 
-                $scope.longLoremList = randomList(loremArray, 50);
+                $scope.longLoremList = randomList(loremArray, 500);
 
                 $scope.filteredList = $scope.longLoremList
 
@@ -197,7 +199,7 @@
                 </tbody>
             </table>
 
-            <at-pagination items-per-page="7" instance="wildPagination" list="longLoremList"></at-pagination>
+            <at-pagination max-size="1" items-per-page="7" instance="wildPagination" list="longLoremList"></at-pagination>
 
         </div>
         <div class="span7">
